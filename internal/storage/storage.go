@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-const initCategoryStorage = "create table if not exists categories (id integer not null primary key, name text)"
+const initCategoryStorage = "create table if not exists categories (id integer not null primary key, name text unique)"
 const initRecordStorage = `
 create table if not exists records (
 id integer not null primary key,
@@ -83,7 +83,9 @@ func (r *recordStorage) Save(rec models.Record) error {
 }
 
 func (r *recordStorage) GetByPeriod(start, end string) ([]models.Record, error) {
-	query := "select * from records where date >= $1 and date < $2"
+	query := `select r.id, r.type, r.amount, r.date, c.id, c.name from records as r
+	left join categories as c on r.category = c.id
+	where r.date >= $1 and r.date <= $2`
 	rows, err := r.db.Query(query, start, end)
 	if err != nil {
 		return nil, err
@@ -92,13 +94,15 @@ func (r *recordStorage) GetByPeriod(start, end string) ([]models.Record, error) 
 	result := make([]models.Record, 0, 2)
 	for rows.Next() {
 		var record models.Record
-		if err := rows.Scan(&record.ID, &record.Type, &record.Category, &record.Amount, &record.Date); err != nil {
+		var category models.Category
+		if err := rows.Scan(&record.ID, &record.Type, &record.Amount, &record.Date, &category.ID, &category.Name); err != nil {
 			return nil, err
 		}
+		record.Category = category
 		result = append(result, record)
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return result, nil
 }

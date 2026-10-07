@@ -72,6 +72,7 @@ func main() {
 						break
 					}
 				}
+				log.Fatal(err)
 			}
 			fmt.Printf("Expense successfully added: Category %s, amount %s\n", *name, *amount)
 		case *income:
@@ -95,6 +96,7 @@ func main() {
 						break
 					}
 				}
+				log.Fatal(err)
 			}
 			fmt.Printf("Income successfully added: Category %s, amount %s\n", *name, *amount)
 		case *category:

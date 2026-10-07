@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-
 type App struct {
 	categoryStorage storage.CategoryRepository
 	recordStorage   storage.RecordRepository
@@ -29,7 +28,7 @@ func (a *App) AddExpense(catName string, amount string) error {
 		return err
 	}
 	record.Type = models.Expense
-	record.Date = time.Now().Format("02, Jan 06 15:04:05")
+	record.Date = time.Now().Format(time.DateTime)
 	return a.recordStorage.Save(record)
 }
 
@@ -39,7 +38,7 @@ func (a *App) AddIncome(catName string, amount string) error {
 		return err
 	}
 	record.Type = models.Income
-	record.Date = time.Now().Format("02, Jan 06 15:04:05")
+	record.Date = time.Now().Format(time.DateTime)
 	return a.recordStorage.Save(record)
 }
 
