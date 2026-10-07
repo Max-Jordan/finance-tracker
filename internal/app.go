@@ -50,8 +50,9 @@ func (a *App) AddCategory(name string) error {
 			if err = a.categoryStorage.Save(cat); err != nil {
 				return fmt.Errorf("saving category failed: %w", err)
 			}
+		} else {
+			return err
 		}
-		return err
 	}
 	fmt.Println("Category already exist.")
 	return nil

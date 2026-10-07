@@ -68,11 +68,13 @@ func main() {
 							log.Fatal(err)
 						}
 						fmt.Printf("Expense successfully added: Category %s, amount %s\n", *name, *amount)
+						break
 					} else {
 						break
 					}
+				} else {
+					log.Fatal(err)
 				}
-				log.Fatal(err)
 			}
 			fmt.Printf("Expense successfully added: Category %s, amount %s\n", *name, *amount)
 		case *income:
@@ -80,7 +82,7 @@ func main() {
 				if errors.Is(err, sql.ErrNoRows) {
 					fmt.Printf("Category %s doesn't exist. Would you like to create category ?[y/n]: ", *name)
 					var choose string
-					_, err := fmt.Scan(&choose)
+					_, err = fmt.Scan(&choose)
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -92,11 +94,13 @@ func main() {
 							log.Fatal(err)
 						}
 						fmt.Printf("Income successfully added: Category %s, amount %s\n", *name, *amount)
+						break
 					} else {
 						break
 					}
+				} else {
+					log.Fatal(err)
 				}
-				log.Fatal(err)
 			}
 			fmt.Printf("Income successfully added: Category %s, amount %s\n", *name, *amount)
 		case *category:

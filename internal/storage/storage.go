@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-const initCategoryStorage = "create table if not exists categories (id integer not null primary key, name text unique)"
+const initCategoryStorage = "create table if not exists categories (id integer not null primary key, name text not null unique)"
 const initRecordStorage = `
 create table if not exists records (
 id integer not null primary key,
@@ -77,7 +77,7 @@ func NewRecordStorage(db *sql.DB) (*recordStorage, error) {
 func (r *recordStorage) Save(rec models.Record) error {
 	query := "insert into records (type, category, amount, date) values ($1, $2, $3, $4)"
 	if _, err := r.db.Exec(query, rec.Type, rec.Category.ID, rec.Amount, rec.Date); err != nil {
-		return err
+		return fmt.Errorf("failed to save record: %w", err)
 	}
 	return nil
 }
@@ -88,7 +88,7 @@ func (r *recordStorage) GetByPeriod(start, end string) ([]models.Record, error) 
 	where r.date >= $1 and r.date <= $2`
 	rows, err := r.db.Query(query, start, end)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get result by period: %w", err)
 	}
 	defer rows.Close()
 	result := make([]models.Record, 0, 2)
@@ -96,7 +96,7 @@ func (r *recordStorage) GetByPeriod(start, end string) ([]models.Record, error) 
 		var record models.Record
 		var category models.Category
 		if err := rows.Scan(&record.ID, &record.Type, &record.Amount, &record.Date, &category.ID, &category.Name); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan result: %w", err)
 		}
 		record.Category = category
 		result = append(result, record)
