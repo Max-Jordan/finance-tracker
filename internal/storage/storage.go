@@ -27,13 +27,6 @@ type RecordRepository interface {
 	Save(models.Record) error
 	GetByPeriod(start, end string) ([]models.Record, error)
 }
-type AppStorage struct {
-	categoryStorage *categoryStorage
-}
-
-func NewAppStorage(catStorage *categoryStorage) *AppStorage {
-	return &AppStorage{categoryStorage: catStorage}
-}
 
 type categoryStorage struct {
 	db *sql.DB
