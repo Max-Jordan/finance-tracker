@@ -78,7 +78,7 @@ func (r *recordStorage) Save(rec models.Record) error {
 func (r *recordStorage) GetByPeriod(start, end string) ([]models.Record, error) {
 	query := `select r.id, r.type, r.amount, r.date, c.id, c.name from records as r
 	left join categories as c on r.category = c.id
-	where r.date >= $1 and r.date <= $2`
+	where r.date >= $1 and r.date < $2`
 	rows, err := r.db.Query(query, start, end)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get result by period: %w", err)

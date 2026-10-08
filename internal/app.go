@@ -3,14 +3,22 @@ package internal
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
-	"finance-tracker/internal/models"
-	"finance-tracker/internal/storage"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"finance-tracker/internal/models"
+	"finance-tracker/internal/storage"
+)
+
+const (
+	JSONReport    = "json"
+	RawTextReport = "raw"
 )
 
 type App struct {
@@ -58,6 +66,22 @@ func (a *App) AddCategory(name string) error {
 	return nil
 }
 
+func (a *App) GetRecords(from, to, filePath, formatReport string) error {
+	fromDate, fromLayout, err := parseDate(from)
+	if err != nil {
+		return err
+	}
+	toDate, toLayout, err := parseDate(to)
+	if err != nil {
+		return err
+	}
+	result, err := a.recordStorage.GetByPeriod(fromDate.Format(fromLayout), toDate.Add(24*time.Hour).Format(toLayout))
+	if err != nil {
+		return err
+	}
+	return createReport(result, filePath, formatReport)
+}
+
 func (a *App) checkCategory(name string) (models.Category, error) {
 	cat, err := a.categoryStorage.Get(strings.ToLower(name))
 	if err != nil {
@@ -76,6 +100,18 @@ func (a *App) validateRecord(catName, amount string) (models.Record, error) {
 		return models.Record{}, err
 	}
 	return models.Record{Category: cat, Amount: numAmount}, nil
+}
+
+func parseDate(date string) (time.Time, string, error) {
+	t, err := time.Parse(time.DateTime, date)
+	if err != nil {
+		t, err = time.Parse(time.DateOnly, date)
+		if err != nil {
+			return time.Time{}, "", err
+		}
+		return t, time.DateOnly, nil
+	}
+	return t, time.DateTime, nil
 }
 
 func parseAmount(amount string) (int64, error) {
@@ -109,4 +145,29 @@ func parseAmount(amount string) (int64, error) {
 	} else {
 		return 0, errors.New("invalid amount format")
 	}
+}
+
+func createReport(records []models.Record, filePath, format string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	for _, record := range records {
+		switch format {
+		case JSONReport:
+			encoder := json.NewEncoder(file)
+			encoder.SetIndent("", " ")
+			if err := encoder.Encode(record); err != nil {
+				return fmt.Errorf("encode data failed: %w", err)
+			}
+		case RawTextReport:
+			if _, err := fmt.Fprintln(file, record); err != nil {
+				return fmt.Errorf("write text error: %w", err)
+			}
+		default:
+			return errors.New("unkown data format")
+		}
+	}
+	return nil
 }

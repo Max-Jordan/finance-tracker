@@ -3,12 +3,13 @@ package main
 import (
 	"database/sql"
 	"errors"
-	"finance-tracker/internal"
-	"finance-tracker/internal/storage"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+
+	"finance-tracker/internal"
+	"finance-tracker/internal/storage"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -27,6 +28,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("open database failed: %v", err)
 	}
+	defer db.Close()
 	flag.Usage = func() {
 		fmt.Println(helpMessage)
 	}
@@ -39,13 +41,17 @@ func main() {
 		log.Fatalf("create record storage failed: %v", err)
 	}
 	app := internal.NewApp(categoryStorage, recordStorage)
-	if len(os.Args) > 1 && os.Args[1] == "add" {
+	if hasCommand := len(os.Args) > 1; !hasCommand {
+		fmt.Println("Try -help to get more information")
+	}
+	switch os.Args[1] {
+	case "add":
 		fs := flag.NewFlagSet("add", flag.ContinueOnError)
-		var expense = fs.Bool("e", false, "expense")
-		var income = fs.Bool("i", false, "income")
-		var category = fs.Bool("c", false, "category")
-		var name = fs.String("N", "", "category name")
-		var amount = fs.String("amount", "", "expense/income amount")
+		expense := fs.Bool("e", false, "expense")
+		income := fs.Bool("i", false, "income")
+		category := fs.Bool("c", false, "category")
+		name := fs.String("N", "", "category name")
+		amount := fs.String("amount", "", "expense/income amount")
 		err := fs.Parse(os.Args[2:])
 		if err != nil {
 			log.Fatalf("failing to parse arguments: %v", err)
@@ -108,7 +114,28 @@ func main() {
 				log.Fatal(err)
 			}
 		}
-	} else {
-		fmt.Println("Try -help to get more information")
+	case "report":
+		fs := flag.NewFlagSet("report", flag.ContinueOnError)
+		from := fs.String("from", "", "Stat value from (date layout 2006-01-02 or 2006-01-02 15:04:05)")
+		to := fs.String("to", "", "Stat value to (date layout 2006-01-02 or 2006-01-02 15:04:05)")
+		json := fs.Bool("json", false, "report formt json")
+		rawText := fs.Bool("raw", true, "report format raw text")
+		fileName := fs.String("path", "./report.txt", "file path to import report")
+		err := fs.Parse(os.Args[2:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		var formatReport string
+		switch {
+		case *json:
+			formatReport = internal.JSONReport
+		case *rawText:
+			formatReport = internal.RawTextReport
+		}
+		if err := app.GetRecords(*from, *to, *fileName, formatReport); err != nil {
+			log.Fatal(err)
+		}
+	default:
+		fmt.Println("unknown command")
 	}
 }

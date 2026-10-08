@@ -9,7 +9,7 @@ const (
 )
 
 type Category struct {
-	ID   int64   `json:"ID"`
+	ID   int64  `json:"ID"`
 	Name string `json:"category_name"`
 }
 
