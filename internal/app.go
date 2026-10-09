@@ -16,11 +16,6 @@ import (
 	"finance-tracker/internal/storage"
 )
 
-const (
-	JSONReport    = "json"
-	RawTextReport = "raw"
-)
-
 type App struct {
 	categoryStorage storage.CategoryRepository
 	recordStorage   storage.RecordRepository
@@ -154,14 +149,14 @@ func createReport(records []models.Record, filePath, format string) error {
 	}
 	defer file.Close()
 	for _, record := range records {
-		switch format {
-		case JSONReport:
+		switch strings.ToLower(format) {
+		case "json":
 			encoder := json.NewEncoder(file)
 			encoder.SetIndent("", " ")
 			if err := encoder.Encode(record); err != nil {
 				return fmt.Errorf("encode data failed: %w", err)
 			}
-		case RawTextReport:
+		case "raw":
 			if _, err := fmt.Fprintln(file, record); err != nil {
 				return fmt.Errorf("write text error: %w", err)
 			}

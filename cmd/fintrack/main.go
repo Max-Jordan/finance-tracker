@@ -43,6 +43,7 @@ func main() {
 	app := internal.NewApp(categoryStorage, recordStorage)
 	if hasCommand := len(os.Args) > 1; !hasCommand {
 		fmt.Println("Try -help to get more information")
+		return
 	}
 	switch os.Args[1] {
 	case "add":
@@ -118,21 +119,13 @@ func main() {
 		fs := flag.NewFlagSet("report", flag.ContinueOnError)
 		from := fs.String("from", "", "Stat value from (date layout 2006-01-02 or 2006-01-02 15:04:05)")
 		to := fs.String("to", "", "Stat value to (date layout 2006-01-02 or 2006-01-02 15:04:05)")
-		json := fs.Bool("json", false, "report formt json")
-		rawText := fs.Bool("raw", true, "report format raw text")
+		format := fs.String("format", "raw", "report format (JSON, raw text)")
 		fileName := fs.String("path", "./report.txt", "file path to import report")
 		err := fs.Parse(os.Args[2:])
 		if err != nil {
 			log.Fatal(err)
 		}
-		var formatReport string
-		switch {
-		case *json:
-			formatReport = internal.JSONReport
-		case *rawText:
-			formatReport = internal.RawTextReport
-		}
-		if err := app.GetRecords(*from, *to, *fileName, formatReport); err != nil {
+		if err := app.GetRecords(*from, *to, *fileName, *format); err != nil {
 			log.Fatal(err)
 		}
 	default:
