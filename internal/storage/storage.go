@@ -7,7 +7,12 @@ import (
 	"fmt"
 )
 
-const initCategoryStorage = "create table if not exists categories (id integer not null primary key, name text not null unique)"
+const initCategoryStorage = `
+create table if not exists categories (
+id integer not null primary key,
+name text not null unique
+)`
+
 const initRecordStorage = `
 create table if not exists records (
 id integer not null primary key,
