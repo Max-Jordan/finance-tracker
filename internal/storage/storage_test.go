@@ -97,13 +97,15 @@ func TestRecordStorage(t *testing.T) {
 
 	expenseRecord := models.Record{Type: models.Expense, Category: expenseCat, Amount: 12_064, Date: "1999-01-01 10:00:00"}
 	incomeRecord := models.Record{Type: models.Income, Category: incomeCat, Amount: 20_000, Date: "1999-01-01 12:00:00"}
+	brokenRecord := models.Record{Type: models.Expense, Category: models.Category{ID: 10, Name: "Other"}, Date: "1999-01-01 10:10:10"}
 	saveRecordTests := []struct {
 		name    string
 		input   models.Record
 		wantErr bool
 	}{
-		{name: "Save expense record", input: expenseRecord, wantErr: false},
-		{name: "Save income record", input: incomeRecord, wantErr: false},
+		{name: "Save: expense record", input: expenseRecord, wantErr: false},
+		{name: "Save: income record", input: incomeRecord, wantErr: false},
+		{name: "Save: category doesn't exist", input: brokenRecord, wantErr: true},
 	}
 
 	for _, test := range saveRecordTests {
@@ -130,7 +132,7 @@ func TestRecordStorage(t *testing.T) {
 			name: "Get records: correct period", inputStart: "1999-01-01 09:00:00",
 			inputEnd: "1999-01-01 13:00:00", wantResult: recordResults, wantErr: false,
 		}, {
-			name: "Get records: included end date", inputStart: "1999-01-01 10:00:00",
+			name: "Get records: end date excluded", inputStart: "1999-01-01 10:00:00",
 			inputEnd: "1999-01-01 12:00:00", wantResult: []models.Record{expenseRecord}, wantErr: false,
 		}, {
 			name: "Get records: period doesn't exist", inputStart: "2000-01-01 10:00:00",
