@@ -6,6 +6,7 @@ import (
 	"finance-tracker/internal/storage"
 	"path/filepath"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -38,6 +39,43 @@ func TestParseAmount(t *testing.T) {
 	}
 }
 
+func TestParseDate(t *testing.T) {
+	date := time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC)
+	dateTime := time.Date(1999, time.January, 1, 10, 10, 10, 0, time.UTC)
+
+	tests := []struct {
+		name       string
+		input      string
+		wantResult time.Time
+		wantLayout string
+		wantErr    bool
+	}{
+		{name: "Parse date", input: "1999-01-01", wantResult: date, wantLayout: time.DateOnly, wantErr: false},
+		{name: "Parse date time", input: "1999-01-01 10:10:10", wantResult: dateTime, wantLayout: time.DateTime, wantErr: false},
+		{name: "Incorrect date format", input: "01, Jan 1999 10:10:10", wantErr: true},
+		{name: "Invalid calendar date", input: "1999-01-100", wantErr: true},
+		{name: "Invalid time", input: "1999-01-01 25:00:00", wantErr: true},
+		{name: "Missing seconds", input: "1999-01-01 10:10", wantErr: true},
+		{name: "Empty input", wantErr: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res, layout, err := parseDate(test.input)
+			gotErr := err != nil
+			if gotErr != test.wantErr {
+				t.Fatalf("Test: %s, want error %t, got error %t", test.name, test.wantErr, gotErr)
+			}
+			if !res.Equal(test.wantResult) {
+				t.Errorf("Test: %s, want result %v, got gesult %v", test.name, test.wantResult, res)
+			}
+			if layout != test.wantLayout {
+				t.Errorf("Test: %s, want layout %s, got layout %s", test.name, test.wantLayout, layout)
+			}
+		})
+	}
+}
+
 func TestCategoryStorage(t *testing.T) {
 	db := createTempDB(t)
 
@@ -48,9 +86,9 @@ func TestCategoryStorage(t *testing.T) {
 
 	category := models.Category{Name: "Groceries"}
 
-	saveTests := []struct{
-		name string
-		input models.Category
+	saveTests := []struct {
+		name    string
+		input   models.Category
 		wantErr bool
 	}{
 		{name: "Save category", input: category, wantErr: false},
@@ -74,7 +112,7 @@ func TestCategoryStorage(t *testing.T) {
 		wantErr    bool
 	}{
 		{name: "Get category", input: category.Name, wantResult: models.Category{ID: 1, Name: category.Name}, wantErr: false},
-		{name: "Get doens't exist categoty", input: "hello",  wantResult: models.Category{}, wantErr: true},
+		{name: "Get doesn't exist categoty", input: "hello", wantResult: models.Category{}, wantErr: true},
 	}
 	for _, test := range getTests {
 		t.Run(test.name, func(t *testing.T) {
