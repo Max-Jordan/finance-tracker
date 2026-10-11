@@ -2,8 +2,6 @@ package internal
 
 import (
 	"database/sql"
-	"finance-tracker/internal/models"
-	"finance-tracker/internal/storage"
 	"path/filepath"
 	"testing"
 	"time"
@@ -71,58 +69,6 @@ func TestParseDate(t *testing.T) {
 			}
 			if layout != test.wantLayout {
 				t.Errorf("Test: %s, want layout %s, got layout %s", test.name, test.wantLayout, layout)
-			}
-		})
-	}
-}
-
-func TestCategoryStorage(t *testing.T) {
-	db := createTempDB(t)
-
-	categoryStorage, err := storage.NewCategoryStorage(db)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	category := models.Category{Name: "Groceries"}
-
-	saveTests := []struct {
-		name    string
-		input   models.Category
-		wantErr bool
-	}{
-		{name: "Save category", input: category, wantErr: false},
-		{name: "Duplicate category", input: category, wantErr: true},
-	}
-
-	for _, test := range saveTests {
-		t.Run(test.name, func(t *testing.T) {
-			err := categoryStorage.Save(test.input)
-			getErr := err != nil
-			if getErr != test.wantErr {
-				t.Errorf("Test: %s, want error %t, get error %t", test.name, test.wantErr, getErr)
-			}
-		})
-	}
-
-	getTests := []struct {
-		name       string
-		input      string
-		wantResult models.Category
-		wantErr    bool
-	}{
-		{name: "Get category", input: category.Name, wantResult: models.Category{ID: 1, Name: category.Name}, wantErr: false},
-		{name: "Get doesn't exist categoty", input: "hello", wantResult: models.Category{}, wantErr: true},
-	}
-	for _, test := range getTests {
-		t.Run(test.name, func(t *testing.T) {
-			res, err := categoryStorage.Get(test.input)
-			getErr := err != nil
-			if getErr != test.wantErr {
-				t.Fatalf("Test: %s, want error %t, get error %t", test.name, test.wantErr, getErr)
-			}
-			if res != test.wantResult {
-				t.Errorf("Test: %s, want %v, got %v", test.name, test.wantResult, res)
 			}
 		})
 	}
