@@ -2,12 +2,71 @@ package internal
 
 import (
 	"database/sql"
+	"finance-tracker/internal/models"
+	"finance-tracker/internal/storage"
 	"path/filepath"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+func TestAddExpense(t *testing.T) {
+	app := createTempApp(t)
+
+	if err := app.categoryStorage.Save(models.Category{Name: "groceries"}); err != nil {
+		t.Fatal("Saving category failed")
+	}
+
+	tests := []struct {
+		name          string
+		inputCategory string
+		inputAmount   string
+		wantErr       bool
+	}{
+		{name: "existing category", inputCategory: "Groceries", inputAmount: "123.12", wantErr: false},
+		{name: "incorrect amount", inputCategory: "Groceries", inputAmount: "123,123", wantErr: true},
+		{name: "category isn't exist", inputCategory: "Other", inputAmount: "123", wantErr: true},
+		{name: "empty amount", inputCategory: "Groceries", inputAmount: "", wantErr: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := app.AddExpense(test.inputCategory, test.inputAmount)
+			gotErr := err != nil
+			if gotErr != test.wantErr {
+				t.Errorf("Test: %s, want error %t, got error %v", test.name, test.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestAddExpenseSaveRecords(t *testing.T) {
+	app := createTempApp(t)
+
+	if err := app.categoryStorage.Save(models.Category{Name: "groceries"}); err != nil {
+		t.Fatal("Saving category failed")
+	}
+
+	if err := app.AddExpense("Groceries", "123,00"); err != nil {
+		t.Fatal("Adding expense failed")
+	}
+
+	startTime := time.Now().Add(-time.Second).Format(time.DateTime)
+	endTime := time.Now().Add(time.Second).Format(time.DateTime)
+
+	result, err := app.recordStorage.GetByPeriod(startTime, endTime)
+	if err != nil {
+		t.Fatal("Getting record failed")
+	}
+
+	if result[0].Category.Name != "groceries" {
+		t.Errorf("Record category name: want groceries, got %s", result[0].Category.Name)
+	}
+	if result[0].Amount != 12300 {
+		t.Errorf("Record amount: want %d, got %d", 12300, result[0].Amount)
+	}
+}
 
 func TestParseAmount(t *testing.T) {
 	tests := []struct {
@@ -26,7 +85,7 @@ func TestParseAmount(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res, err := parseAmount(test.input)
+			res, err := parseStringAmount(test.input)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Fatalf("Test: %s, want error %t, got error %t", test.name, test.wantErr, gotErr)
 			}
@@ -90,4 +149,40 @@ func createTempDB(t *testing.T) *sql.DB {
 	})
 
 	return db
+}
+
+func createTempApp(t *testing.T) *App {
+	t.Helper()
+
+	db := createTempDB(t)
+
+	recordStorage, err := storage.NewRecordStorage(db)
+	if err != nil {
+		t.Fatalf("Creating records storage failed: %v", err)
+	}
+	categoryStorage, err := storage.NewCategoryStorage(db)
+	if err != nil {
+		t.Fatalf("Creating category storage filed: %v", err)
+	}
+	return NewApp(categoryStorage, recordStorage)
+}
+
+func createTempRecordStorage(t *testing.T, db *sql.DB) storage.RecordRepository {
+	t.Helper()
+
+	recordStorage, err := storage.NewRecordStorage(db)
+	if err != nil {
+		t.Fatalf("Creating record storage failed: %v", err)
+	}
+	return recordStorage
+}
+
+func createTempCategoryStorage(t *testing.T, db *sql.DB) storage.CategoryRepository {
+	t.Helper()
+
+	categoryStorage, err := storage.NewCategoryStorage(db)
+	if err != nil {
+		t.Fatalf("Creating category storage failed: %v", err)
+	}
+	return categoryStorage
 }

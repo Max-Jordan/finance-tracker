@@ -90,7 +90,7 @@ func (a *App) validateRecord(catName, amount string) (models.Record, error) {
 	if err != nil {
 		return models.Record{}, err
 	}
-	numAmount, err := parseAmount(amount)
+	numAmount, err := parseStringAmount(amount)
 	if err != nil {
 		return models.Record{}, err
 	}
@@ -109,7 +109,7 @@ func parseDate(date string) (time.Time, string, error) {
 	return t, time.DateTime, nil
 }
 
-func parseAmount(amount string) (int64, error) {
+func parseStringAmount(amount string) (int64, error) {
 	t, err := regexp.MatchString("^-", amount)
 	if err != nil {
 		return 0, err
@@ -149,15 +149,16 @@ func createReport(records []models.Record, filePath, format string) error {
 	}
 	defer file.Close()
 	for _, record := range records {
+		dto := models.NewRecordDTO(record)
 		switch strings.ToLower(format) {
 		case "json":
 			encoder := json.NewEncoder(file)
 			encoder.SetIndent("", " ")
-			if err := encoder.Encode(record); err != nil {
+			if err := encoder.Encode(dto); err != nil {
 				return fmt.Errorf("encode data failed: %w", err)
 			}
 		case "raw":
-			if _, err := fmt.Fprintln(file, record); err != nil {
+			if _, err := fmt.Fprintln(file, dto); err != nil {
 				return fmt.Errorf("write text error: %w", err)
 			}
 		default:
