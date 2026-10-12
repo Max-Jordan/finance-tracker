@@ -44,10 +44,10 @@ internal/
 ## Build
 
 ```bash
-    git clone https://github.com/Max-Jordan/finance-tracker
-    cd finance-tracker
+git clone https://github.com/Max-Jordan/finance-tracker
+cd finance-tracker
 
-    go build -o fintrack ./cmd/fintrack
+go build -o fintrack ./cmd/fintrack
 ```
 
 ## Usage
@@ -111,17 +111,17 @@ Default path to export is ./report.txt
 The project uses two tables.
 
 ```sql
-    create table if not exists categories(
-        id integer not null primary key,
-        name text not null unique
-    );
+create table if not exists categories(
+    id integer not null primary key,
+    name text not null unique
+);
 
-    create table if not exists records(
-        id integer not null primary key,
-        type text not null,
-        category integer not null,
-        amount integer not null,
-        date text not null,
-        foreign key(category) references categories(id)
-    );
+create table if not exists records(
+    id integer not null primary key,
+    type text not null,
+    category integer not null,
+    amount integer not null,
+    date text not null,
+    foreign key(category) references categories(id)
+);
 ```
