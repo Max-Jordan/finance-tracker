@@ -41,6 +41,37 @@ func TestAddExpense(t *testing.T) {
 	}
 }
 
+func TestAddIncome(t *testing.T) {
+	app := createTempApp(t)
+
+	if err := app.categoryStorage.Save(models.Category{Name: "salary"}); err != nil {
+		t.Fatal("Saving category failed")
+	}
+
+	tests := []struct {
+		name          string
+		inputCategory string
+		inputAmount   string
+		wantErr       bool
+	}{
+		{name: "existring category", inputCategory: "salary", inputAmount: "1000,42", wantErr: false},
+		{name: "incorrect amount", inputCategory: "salary", inputAmount: "1000,42,50", wantErr: true},
+		{name: "category isn't exist", inputCategory: "other", inputAmount: "1000,50", wantErr: true},
+		{name: "empty amount", inputCategory: "salary", wantErr: true},
+		{name: "empty category", inputAmount: "1000,42", wantErr: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T){
+			err := app.AddIncome(test.inputCategory, test.inputAmount)
+			gotErr := err != nil
+			if gotErr != test.wantErr {
+				t.Errorf("Test: %s, want error %t, got %v", test.name, test.wantErr, err)
+			}
+		})
+	}
+}
+
 func TestAddExpenseSaveRecords(t *testing.T) {
 	app := createTempApp(t)
 
