@@ -56,8 +56,9 @@ func (a *App) AddCategory(name string) error {
 		} else {
 			return err
 		}
+	} else {
+		fmt.Println("Category already exist")
 	}
-	fmt.Println("Category already exist.")
 	return nil
 }
 
@@ -78,6 +79,9 @@ func (a *App) GetRecords(from, to, filePath, formatReport string) error {
 }
 
 func (a *App) checkCategory(name string) (models.Category, error) {
+	if name == "" {
+		return models.Category{}, errors.New("empty category name")
+	}
 	cat, err := a.categoryStorage.Get(strings.ToLower(name))
 	if err != nil {
 		return models.Category{}, err

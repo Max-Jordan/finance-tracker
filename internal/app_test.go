@@ -72,6 +72,28 @@ func TestAddIncome(t *testing.T) {
 	}
 }
 
+func TestAddCategory(t *testing.T) {
+	app := createTempApp(t)
+
+	tests := []struct{
+		name string
+		input string
+		wantErr bool
+	}{
+		{name: "correct category", input: "groceries", wantErr: false},
+		{name: "duplicate category", input: "groceries", wantErr: false},
+		{name: "empty name", wantErr: true},
+	}
+
+	for _, test := range tests {
+		err := app.AddCategory(test.input)
+		gotErr := err != nil
+		if gotErr != test.wantErr {
+			t.Errorf("Test: %s, want error %t, got error %v", test.name, test.wantErr, err)
+		}
+	}
+}
+
 func TestAddExpenseSaveRecords(t *testing.T) {
 	app := createTempApp(t)
 
