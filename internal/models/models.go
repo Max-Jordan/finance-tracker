@@ -2,6 +2,7 @@
 package models
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -39,9 +40,16 @@ func NewRecordDTO(r Record) RecordDTO {
 }
 
 func parseIntAmount(amount int64) string {
+	if amount >= 100 {
 	unit := amount / 100
 	sUnit := strconv.Itoa(int(unit))
 	stringAmount := strconv.Itoa(int(amount))
-	res := strings.SplitAfter(stringAmount, sUnit)
+	res := strings.SplitAfterN(stringAmount, sUnit, 2)
 	return strings.Join(res, ",")
+	} else if amount >= 10 {
+		sSubunit := strconv.Itoa(int(amount))
+		return "0," + sSubunit
+	} else {
+		return "0," + fmt.Sprintf("%02d", amount)
+	}
 }

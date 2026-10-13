@@ -9,9 +9,12 @@ func TestParseIntAmount(t *testing.T) {
 		wantResult string
 	}{
 		{name: "whole unit with zero subunit", input: 100, wantResult: "1,00"},
-		{name: "subunit with leading zero", input: 104, wantResult: "1,04"},
+		{name: "subunit with leading zero", input: 101, wantResult: "1,01"},
 		{name: "multiply whole units with zero subunits", input: 10000, wantResult: "100,00"},
 		{name: "two digit subunit", input: 123, wantResult: "1,23"},
+		{name: "amount less than ten subunit", input: 1, wantResult: "0,01"},
+		{name: "amount less than one unit", input: 99, wantResult: "0,99"},
+		{name: "zero amount", input: 0, wantResult: "0,00"},
 	}
 
 	for _, test := range tests {
