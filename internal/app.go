@@ -77,22 +77,25 @@ func (a *App) CreateReport(from, to, filePath, formatReport string) error {
 		return err
 	}
 	defer file.Close()
+	dtos := make([]models.RecordDTO, 0, len(records))
 	for _, record := range records {
-		dto := models.NewRecordDTO(record)
-		switch strings.ToLower(formatReport) {
-		case JSONReport:
-			encoder := json.NewEncoder(file)
-			encoder.SetIndent("", " ")
-			if err := encoder.Encode(dto); err != nil {
-				return fmt.Errorf("encode data failed: %w", err)
-			}
-		case RawReport:
-			if _, err := fmt.Fprintln(file, dto); err != nil {
-				return fmt.Errorf("write text error: %w", err)
-			}
-		default:
-			return errors.New("unkown report format")
+		dtos = append(dtos, models.NewRecordDTO(record))
+	}
+	switch strings.ToLower(formatReport) {
+	case JSONReport:
+		encoder := json.NewEncoder(file)
+		encoder.SetIndent("", " ")
+		if err := encoder.Encode(dtos); err != nil {
+			return fmt.Errorf("encode dto into file failed: %w", err)
 		}
+	case RawReport:
+		for _, dto := range dtos {
+			if _, err := fmt.Fprintln(file, dto); err != nil {
+				return fmt.Errorf("writing dto into file failed: %w", err)
+			}
+		}
+	default:
+		return errors.New("unknown report format")
 	}
 	return nil
 }
@@ -106,7 +109,10 @@ func (a *App) getRecords(from, to string) ([]models.Record, error) {
 	if err != nil {
 		return []models.Record{}, err
 	}
-	result, err := a.recordStorage.GetByPeriod(fromDate.Format(fromDateLayout), toDate.Add(24*time.Hour).Format(toLayout))
+	if toLayout == time.DateOnly {
+		toDate = toDate.Add(24 * time.Hour)
+	}
+	result, err := a.recordStorage.GetByPeriod(fromDate.Format(fromDateLayout), toDate.Format(toLayout))
 	if err != nil {
 		return []models.Record{}, err
 	}

@@ -40,8 +40,8 @@ func NewRecordDTO(r Record) RecordDTO {
 
 func parseIntAmount(amount int64) string {
 	unit := amount / 100
-	subunit := amount - unit*100
 	sUnit := strconv.Itoa(int(unit))
-	sSubunit := strconv.Itoa(int(subunit))
-	return strings.Join([]string{sUnit, sSubunit}, ",")
+	stringAmount := strconv.Itoa(int(amount))
+	res := strings.SplitAfter(stringAmount, sUnit)
+	return strings.Join(res, ",")
 }

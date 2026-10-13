@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -138,7 +139,7 @@ func TestCreateReport(t *testing.T) {
 	if len(result) != 1 {
 		t.Fatalf("Failed: want len result 1, got %d", len(result))
 	}
-	model := models.NewRecordDTO(result[0])
+	model := []models.RecordDTO{models.NewRecordDTO(result[0])}
 
 	tests := []struct {
 		name        string
@@ -146,7 +147,7 @@ func TestCreateReport(t *testing.T) {
 		toInput     string
 		pathInput   string
 		formatInput string
-		wantResult  models.RecordDTO
+		wantResult  []models.RecordDTO
 		wantErr     bool
 	}{
 		{name: "JSON report", fromInput: startPeriod,
@@ -168,7 +169,7 @@ func TestCreateReport(t *testing.T) {
 			gotErr := err != nil
 			if gotErr != test.wantErr {
 				t.Fatalf("Test: %s, want error %t, got error %v", test.name, test.wantErr, err)
-			} else if test.wantErr{
+			} else if test.wantErr {
 				return
 			}
 			data, err := os.ReadFile(test.pathInput)
@@ -177,15 +178,16 @@ func TestCreateReport(t *testing.T) {
 			}
 
 			if test.formatInput == "JSON" {
-				var record models.RecordDTO
+				var record []models.RecordDTO
 				if err := json.Unmarshal(data, &record); err != nil {
 					t.Fatalf("Unmarshalling record failed: %v", err)
 				}
-				if record != test.wantResult {
+				if !reflect.DeepEqual(record, test.wantResult) {
 					t.Errorf("Test: %s, want result %v, got result %v", test.name, test.wantResult, record)
 				}
 			} else {
-				if string(data) != fmt.Sprintln(test.wantResult) {
+				want := fmt.Sprintln(test.wantResult[0])
+				if string(data) != want {
 					t.Errorf("Test: %s, want result %v, got result %v", test.name, test.wantResult, string(data))
 				}
 			}
@@ -317,24 +319,4 @@ func createTempApp(t *testing.T) *App {
 		t.Fatalf("Creating category storage filed: %v", err)
 	}
 	return NewApp(categoryStorage, recordStorage)
-}
-
-func createTempRecordStorage(t *testing.T, db *sql.DB) storage.RecordRepository {
-	t.Helper()
-
-	recordStorage, err := storage.NewRecordStorage(db)
-	if err != nil {
-		t.Fatalf("Creating record storage failed: %v", err)
-	}
-	return recordStorage
-}
-
-func createTempCategoryStorage(t *testing.T, db *sql.DB) storage.CategoryRepository {
-	t.Helper()
-
-	categoryStorage, err := storage.NewCategoryStorage(db)
-	if err != nil {
-		t.Fatalf("Creating category storage failed: %v", err)
-	}
-	return categoryStorage
 }
