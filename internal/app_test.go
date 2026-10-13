@@ -168,7 +168,7 @@ func TestCreateReport(t *testing.T) {
 			gotErr := err != nil
 			if gotErr != test.wantErr {
 				t.Fatalf("Test: %s, want error %t, got error %v", test.name, test.wantErr, err)
-			} else if gotErr == test.wantErr {
+			} else if test.wantErr{
 				return
 			}
 			data, err := os.ReadFile(test.pathInput)
