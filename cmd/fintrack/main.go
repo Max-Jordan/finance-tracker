@@ -8,9 +8,8 @@ import (
 	"log"
 	"os"
 
-	"finance-tracker/internal"
-	"finance-tracker/internal/storage"
-
+	"github.com/Max-Jordan/finance-tracker/internal"
+	"github.com/Max-Jordan/finance-tracker/internal/storage"
 	_ "github.com/mattn/go-sqlite3"
 )
 

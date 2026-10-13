@@ -2,11 +2,11 @@ package storage
 
 import (
 	"database/sql"
-	"finance-tracker/internal/models"
 	"path/filepath"
 	"reflect"
 	"testing"
 
+	"github.com/Max-Jordan/finance-tracker/internal/models"
 	_ "github.com/mattn/go-sqlite3"
 )
 

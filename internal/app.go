@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"finance-tracker/internal/models"
-	"finance-tracker/internal/storage"
+	"github.com/Max-Jordan/finance-tracker/internal/models"
+	"github.com/Max-Jordan/finance-tracker/internal/storage"
 )
 
 const (

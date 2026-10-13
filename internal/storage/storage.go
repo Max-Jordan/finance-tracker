@@ -3,8 +3,9 @@ package storage
 
 import (
 	"database/sql"
-	"finance-tracker/internal/models"
 	"fmt"
+
+	"github.com/Max-Jordan/finance-tracker/internal/models"
 )
 
 const initCategoryStorage = `

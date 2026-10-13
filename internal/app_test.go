@@ -3,14 +3,14 @@ package internal
 import (
 	"database/sql"
 	"encoding/json"
-	"finance-tracker/internal/models"
-	"finance-tracker/internal/storage"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/Max-Jordan/finance-tracker/internal/models"
+	"github.com/Max-Jordan/finance-tracker/internal/storage"
 	_ "github.com/mattn/go-sqlite3"
 )
 

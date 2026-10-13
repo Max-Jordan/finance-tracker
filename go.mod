@@ -1,4 +1,4 @@
-module finance-tracker
+module github.com/Max-Jordan/finance-tracker
 
 go 1.27.1
 
