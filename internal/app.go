@@ -16,6 +16,11 @@ import (
 	"finance-tracker/internal/storage"
 )
 
+const (
+	JSONReport = "json"
+	RawReport  = "raw"
+)
+
 type App struct {
 	categoryStorage storage.CategoryRepository
 	recordStorage   storage.RecordRepository
@@ -62,20 +67,53 @@ func (a *App) AddCategory(name string) error {
 	return nil
 }
 
-func (a *App) GetRecords(from, to, filePath, formatReport string) error {
-	fromDate, fromLayout, err := parseDate(from)
+func (a *App) CreateReport(from, to, filePath, formatReport string) error {
+	records, err := a.getRecords(from, to)
 	if err != nil {
 		return err
+	}
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	for _, record := range records {
+		dto := models.NewRecordDTO(record)
+		switch strings.ToLower(formatReport) {
+		case JSONReport:
+			encoder := json.NewEncoder(file)
+			encoder.SetIndent("", " ")
+			if err := encoder.Encode(dto); err != nil {
+				return fmt.Errorf("encode data failed: %w", err)
+			}
+		case RawReport:
+			if _, err := fmt.Fprintln(file, dto); err != nil {
+				return fmt.Errorf("write text error: %w", err)
+			}
+		default:
+			return errors.New("unkown report format")
+		}
+	}
+	return nil
+}
+
+func (a *App) getRecords(from, to string) ([]models.Record, error) {
+	fromDate, fromDateLayout, err := parseDate(from)
+	if err != nil {
+		return []models.Record{}, err
 	}
 	toDate, toLayout, err := parseDate(to)
 	if err != nil {
-		return err
+		return []models.Record{}, err
 	}
-	result, err := a.recordStorage.GetByPeriod(fromDate.Format(fromLayout), toDate.Add(24*time.Hour).Format(toLayout))
+	result, err := a.recordStorage.GetByPeriod(fromDate.Format(fromDateLayout), toDate.Add(24*time.Hour).Format(toLayout))
 	if err != nil {
-		return err
+		return []models.Record{}, err
 	}
-	return createReport(result, filePath, formatReport)
+	if len(result) < 1 {
+		return []models.Record{}, errors.New("records doesn't exist")
+	}
+	return result, nil
 }
 
 func (a *App) checkCategory(name string) (models.Category, error) {
@@ -144,30 +182,4 @@ func parseStringAmount(amount string) (int64, error) {
 	} else {
 		return 0, errors.New("invalid amount format")
 	}
-}
-
-func createReport(records []models.Record, filePath, format string) error {
-	file, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	for _, record := range records {
-		dto := models.NewRecordDTO(record)
-		switch strings.ToLower(format) {
-		case "json":
-			encoder := json.NewEncoder(file)
-			encoder.SetIndent("", " ")
-			if err := encoder.Encode(dto); err != nil {
-				return fmt.Errorf("encode data failed: %w", err)
-			}
-		case "raw":
-			if _, err := fmt.Fprintln(file, dto); err != nil {
-				return fmt.Errorf("write text error: %w", err)
-			}
-		default:
-			return errors.New("unkown data format")
-		}
-	}
-	return nil
 }

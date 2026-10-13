@@ -125,7 +125,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := app.GetRecords(*from, *to, *fileName, *format); err != nil {
+		if err := app.CreateReport(*from, *to, *fileName, *format); err != nil {
 			log.Fatal(err)
 		}
 	default:

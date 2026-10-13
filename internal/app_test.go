@@ -2,8 +2,11 @@ package internal
 
 import (
 	"database/sql"
+	"encoding/json"
 	"finance-tracker/internal/models"
 	"finance-tracker/internal/storage"
+	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -62,7 +65,7 @@ func TestAddIncome(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T){
+		t.Run(test.name, func(t *testing.T) {
 			err := app.AddIncome(test.inputCategory, test.inputAmount)
 			gotErr := err != nil
 			if gotErr != test.wantErr {
@@ -75,9 +78,9 @@ func TestAddIncome(t *testing.T) {
 func TestAddCategory(t *testing.T) {
 	app := createTempApp(t)
 
-	tests := []struct{
-		name string
-		input string
+	tests := []struct {
+		name    string
+		input   string
 		wantErr bool
 	}{
 		{name: "correct category", input: "groceries", wantErr: false},
@@ -91,6 +94,102 @@ func TestAddCategory(t *testing.T) {
 		if gotErr != test.wantErr {
 			t.Errorf("Test: %s, want error %t, got error %v", test.name, test.wantErr, err)
 		}
+	}
+}
+
+func TestAddCategorySaveCategory(t *testing.T) {
+	app := createTempApp(t)
+
+	if err := app.AddCategory("Groceries"); err != nil {
+		t.Fatalf("Adding category erro: %v", err)
+	}
+
+	result, err := app.categoryStorage.Get("groceries")
+	if err != nil {
+		t.Errorf("Getting category: want error false, got error %v", err)
+	}
+
+	if result.Name != "groceries" {
+		t.Errorf("Want category name groceries, got %v", result)
+	}
+}
+
+func TestCreateReport(t *testing.T) {
+	app := createTempApp(t)
+
+	if err := app.AddCategory("groceries"); err != nil {
+		t.Fatalf("Adding category error: %v", err)
+	}
+
+	if err := app.AddExpense("groceries", "123,45"); err != nil {
+		t.Fatalf("Adding record error: %v", err)
+	}
+	dir := t.TempDir()
+	testJSON := filepath.Join(dir, "test_json.json")
+	testRaw := filepath.Join(dir, "test_raw.txt")
+
+	startPeriod := time.Now().Add(-time.Second).Format(time.DateTime)
+	endPeriod := time.Now().Add(time.Second).Format(time.DateTime)
+
+	result, err := app.recordStorage.GetByPeriod(startPeriod, endPeriod)
+	if err != nil {
+		t.Fatal("Getting record failed")
+	}
+	if len(result) != 1 {
+		t.Fatalf("Failed: want len result 1, got %d", len(result))
+	}
+	model := models.NewRecordDTO(result[0])
+
+	tests := []struct {
+		name        string
+		fromInput   string
+		toInput     string
+		pathInput   string
+		formatInput string
+		wantResult  models.RecordDTO
+		wantErr     bool
+	}{
+		{name: "JSON report", fromInput: startPeriod,
+			toInput: endPeriod, pathInput: testJSON,
+			formatInput: "JSON", wantResult: model, wantErr: false},
+		{name: "raw text report", fromInput: startPeriod,
+			toInput: endPeriod, pathInput: testRaw,
+			formatInput: "raw", wantResult: model, wantErr: false},
+		{name: "empty format report", fromInput: startPeriod,
+			toInput: endPeriod, pathInput: testRaw, wantErr: true},
+		{name: "no records period", fromInput: "1000-01-01 10:10:10", toInput: "1000-01-01 10:10:10", wantErr: true},
+		{name: "wrong from date time format", fromInput: "01, Jan 26 10:10:10", wantErr: true},
+		{name: "wrong to date time format", fromInput: startPeriod, toInput: "abc", wantErr: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := app.CreateReport(test.fromInput, test.toInput, test.pathInput, test.formatInput)
+			gotErr := err != nil
+			if gotErr != test.wantErr {
+				t.Fatalf("Test: %s, want error %t, got error %v", test.name, test.wantErr, err)
+			} else if gotErr == test.wantErr {
+				return
+			}
+			data, err := os.ReadFile(test.pathInput)
+			if err != nil {
+				t.Fatalf("Reading from file failed: %v", err)
+			}
+
+			if test.formatInput == "JSON" {
+				var record models.RecordDTO
+				if err := json.Unmarshal(data, &record); err != nil {
+					t.Fatalf("Unmarshalling record failed: %v", err)
+				}
+				if record != test.wantResult {
+					t.Errorf("Test: %s, want result %v, got result %v", test.name, test.wantResult, record)
+				}
+			} else {
+				if string(data) != fmt.Sprintln(test.wantResult) {
+					t.Errorf("Test: %s, want result %v, got result %v", test.name, test.wantResult, string(data))
+				}
+			}
+		})
 	}
 }
 
